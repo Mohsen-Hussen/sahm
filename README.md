@@ -1,116 +1,114 @@
-<div align="center">
+# Sahm — multi-tenant commerce analytics
 
-# Malaab · ملاعب
+[![CI](https://github.com/Mohsen-Hussen/sahm/actions/workflows/ci.yml/badge.svg)](https://github.com/Mohsen-Hussen/sahm/actions/workflows/ci.yml)
+![Next.js 16](https://img.shields.io/badge/Next.js-16-000?logo=nextdotjs)
+![React 19](https://img.shields.io/badge/React-19-149eca?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-**A bilingual (Arabic / English) sports-court booking app built with React Native, Expo and TypeScript.**
+**Sahm** (سهم, "arrow") is a real-time analytics dashboard for online stores. One deployment serves many
+stores, every user has a role per store, and new orders stream in live while you watch.
 
-iOS · Android · Web from one codebase · Real RTL · Slot availability and pricing rules · Tested
+**Live demo:** _coming soon_ · sign in with any demo account below (password `demo1234`).
 
-[![CI](https://github.com/Mohsen-Hussen/malaab/actions/workflows/ci.yml/badge.svg)](https://github.com/Mohsen-Hussen/malaab/actions/workflows/ci.yml)
-![Expo](https://img.shields.io/badge/Expo_SDK-58-000020?logo=expo&logoColor=white)
-![React Native](https://img.shields.io/badge/React_Native-0.88-20232A?logo=react&logoColor=61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-green)
+| Account         | Access                                                |
+| --------------- | ----------------------------------------------------- |
+| `sara@sahm.app` | Owner of all three stores, so she can manage the team |
+| `omar@sahm.app` | Manager at Nakhla, viewer at Souq Tech                |
+| `lina@sahm.app` | Viewer at Nakhla (read-only)                          |
 
-**[▶ Live web demo](https://mohsen-hussen.github.io/malaab/)**
+![Overview dashboard](docs/screenshots/overview.png)
 
-| Explore (AR)                                                                             | Pick a slot (EN)                                                                            | Confirmed (AR)                                                                                   | My bookings (EN)                                                                  |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| <img src="docs/screenshots/explore-ar.png" alt="Explore screen in Arabic" width="200" /> | <img src="docs/screenshots/venue-en.png" alt="Venue slots and price summary" width="200" /> | <img src="docs/screenshots/confirmed-ar.png" alt="Booking confirmation in Arabic" width="200" /> | <img src="docs/screenshots/bookings-en.png" alt="My bookings list" width="200" /> |
+<table>
+  <tr>
+    <td><img src="docs/screenshots/orders.png" alt="Orders table" /></td>
+    <td><img src="docs/screenshots/inventory.png" alt="Inventory" /></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/team.png" alt="Team and permissions" /></td>
+    <td align="center"><img src="docs/screenshots/mobile.png" alt="Mobile layout" width="260" /></td>
+  </tr>
+</table>
 
-</div>
+## What it shows off
 
-## About
+| Area                  | How it's done                                                                                                                                                                                        |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Streaming UI**      | Each dashboard section is an async Server Component behind its own `<Suspense>` boundary, so KPIs, the chart and the tables render as soon as their own query finishes.                              |
+| **Real time**         | A Route Handler streams Server-Sent Events. New orders slide into the live feed, and other users' status changes show up in your table without a reload.                                             |
+| **Optimistic writes** | Order status, stock and role changes use Server Actions with `useOptimistic`. The UI updates instantly and rolls back with a toast if the server rejects the change.                                 |
+| **Multi-tenancy**     | Routes live under `/s/[store]`, and `proxy.ts` can map `nakhla.your-domain.com` to the same pages. Every query takes an explicit `storeId`, and a test proves one store can't touch another's data.  |
+| **Auth & RBAC**       | Signed, `httpOnly` JWT session cookie (`jose`) and PBKDF2 password hashing. One permission matrix drives the UI and is checked again in every Server Action. Non-members get a 404, not a 403.       |
+| **Big tables**        | TanStack Table plus TanStack Virtual render about 2,500 orders smoothly, with search, status filters, sorting and CSV export that is safe against formula injection.                                 |
+| **Data layer**        | Drizzle ORM on Postgres. With no `DATABASE_URL` set, it boots an in-memory **PGlite** (Postgres compiled to WebAssembly) and seeds 180 days of deterministic data, so the demo needs no setup.       |
+| **Domain rules**      | Orders can only move forward (pending → paid → shipped → delivered). Stock can't go negative, and a store always keeps at least one owner. All of these rules run on the server inside transactions. |
+| **Quality**           | Strict TypeScript, ESLint, Prettier, 19 Vitest tests (unit and real-database integration) and 8 Playwright end-to-end flows, all run in CI on every push.                                            |
 
-Malaab lets players find a football, padel, basketball or tennis court, pick a day, a duration and a start time, and book in a few taps. It is a demo, so all venues, prices and availability are fictional. I built it to show how I structure a production-style Expo app: file-based routing, a clean domain layer, persisted state, a real Arabic-first RTL layout, and tests at both the logic and screen level.
-
-## Features
-
-- **Explore.** Search in Arabic or English, filter by sport and city, and see a live result count.
-- **Venue page.** Opening hours, amenities, a 7-day date strip, a 60/90/120-minute duration choice and a start-time grid.
-  - A start time is disabled if it has already passed, runs past closing time, or overlaps another booking (other players' demo bookings or your own).
-- **Pricing.**
-  - Prices are per minute, so a 17:30–19:00 game pays the 25% evening rate only for the 60 minutes after 18:00.
-  - VAT is 15%, and every amount is stored in integer halalas to avoid rounding errors.
-- **Booking.**
-  - Confirmation screen with a booking code.
-  - "My bookings" is split into upcoming and past.
-  - Free cancellation until 24 hours before the start time.
-- **Arabic / English with real RTL.**
-  - The app follows the device language and can be switched in Settings.
-  - On iOS/Android the layout flips through `I18nManager`, with an app reload.
-  - On the web, `dir` and `lang` change instantly.
-  - Time ranges use wording that reads correctly in both directions.
-- **Persistence.** Bookings and the chosen language survive restarts (Zustand + AsyncStorage).
-- **Accessibility.** Buttons, chips and time slots expose their role, label and state (`selected` / `disabled`) to screen readers.
-
-## Tech stack
-
-| Area       | Choice                                                                                  |
-| ---------- | --------------------------------------------------------------------------------------- |
-| Framework  | Expo SDK 58 · React Native 0.88 · React 19                                              |
-| Navigation | Expo Router (stack + tabs, typed routes, modal confirmation)                            |
-| State      | Zustand 5 with `persist` + AsyncStorage                                                 |
-| i18n       | `expo-localization` · typed dictionaries · `I18nManager` / `dir` for RTL                |
-| Testing    | Jest 30 · `jest-expo` · React Native Testing Library 14 · `expo-router/testing-library` |
-| Quality    | TypeScript (strict) · ESLint (`eslint-config-expo`) · Prettier · GitHub Actions         |
-| Web        | `react-native-web`, exported with `expo export -p web` to GitHub Pages                  |
-
-## Project structure
+## Architecture
 
 ```
 src/
-├── app/                        # Expo Router screens (file-based routes)
-│   ├── _layout.tsx             # root stack, locale/direction provider
-│   ├── (tabs)/                 # Explore · My bookings · Settings
-│   ├── venue/[id].tsx          # day, duration and slot picker + price summary
-│   └── booking/[id].tsx        # confirmation / booking details (modal)
-├── features/
-│   ├── venues/data.ts          # venues, sports, cities, search & filters
-│   └── booking/
-│       ├── slots.ts            # availability, overlap, pricing, cancellation rules
-│       └── store.ts            # persisted bookings store
-├── i18n/                       # strings (AR/EN), language store, RTL switching
-├── components/                 # Button, Chip, Card, VenueCard, icons
-└── theme/                      # colors, spacing, radii
-__tests__/                      # unit tests + router-level screen tests
+├─ app/
+│  ├─ login/                 sign-in page + Server Actions
+│  ├─ s/[store]/             tenant-scoped dashboard (overview, orders, inventory, team)
+│  │  └─ actions.ts          Server Actions → authorize() → mutation → revalidate + publish
+│  └─ api/stores/[store]/live/route.ts   Server-Sent Events stream
+├─ server/
+│  ├─ auth.ts                Data Access Layer: session → user → store membership → role
+│  ├─ queries.ts             read models (KPIs, series, top products …), all scoped by storeId
+│  ├─ mutations.ts           transactional writes with domain rules
+│  └─ live.ts                in-process pub/sub + demo order simulator
+├─ db/                       Drizzle schema, client (PGlite or Postgres), deterministic seed
+├─ lib/                      permissions, money, CSV, tenant parsing, password hashing
+├─ components/               UI, overview sections, tables, live feed
+└─ proxy.ts                  subdomain → /s/[store] rewrite + optimistic auth gate
 ```
 
-The booking rules (`slots.ts`) are plain TypeScript with no React or React Native imports, so they are easy to test and could be shared with a backend.
+A status change, end to end:
+
+1. The table applies the new status optimistically and calls the `setOrderStatus` Server Action.
+2. `authorize(slug, "orders:update")` checks the session, the store membership and the role.
+3. `updateOrderStatus` locks the row, validates the transition and writes the change plus an activity entry in one transaction.
+4. `revalidatePath` refreshes the server-rendered data, and `publish()` pushes the change to everyone else watching that store.
 
 ## Getting started
 
-Requires Node.js 20+.
-
 ```bash
-git clone https://github.com/Mohsen-Hussen/malaab.git
-cd malaab
+nvm use            # Node 22
 npm install
-npx expo start          # press i (iOS), a (Android) or w (web), or scan the QR code with Expo Go
+npm run dev        # http://localhost:3000
 ```
 
-| Script               | What it does                              |
-| -------------------- | ----------------------------------------- |
-| `npm start`          | Start the Expo dev server                 |
-| `npm test`           | Run the Jest suite                        |
-| `npm run lint`       | `expo lint`                               |
-| `npm run typecheck`  | `tsc --noEmit`                            |
-| `npm run format`     | Format with Prettier                      |
-| `npm run export:web` | Build the static web version into `dist/` |
+No database or `.env` is needed for local development. Copy `.env.example` to configure:
 
-> Switching the language on iOS/Android reloads the app so React Native can flip the layout direction. In Expo Go, direction overrides are reset by Expo Go itself; use a development build to try them on a device.
+| Variable          | Purpose                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| `SESSION_SECRET`  | **Required in production.** Signs the session cookie (`openssl rand -base64 32`).          |
+| `DATABASE_URL`    | Optional Postgres URL (Neon, Supabase, RDS…). Tables are created and seeded on first boot. |
+| `ROOT_DOMAIN`     | Optional. Enables subdomain routing, e.g. `nakhla.example.com`.                            |
+| `LIVE_SIMULATION` | Set to `off` to stop the demo order generator.                                             |
 
-The live demo is built by [`pages.yml`](.github/workflows/pages.yml) with `EXPO_BASE_URL=/malaab`, which [`app.config.ts`](app.config.ts) maps to Expo's `experiments.baseUrl`. A `404.html` copy lets deep links work on GitHub Pages.
+## Scripts
 
-## Testing
+| Command             | What it does                                  |
+| ------------------- | --------------------------------------------- |
+| `npm run dev`       | Start the dev server                          |
+| `npm run build`     | Production build                              |
+| `npm test`          | Vitest unit + database integration tests      |
+| `npm run test:e2e`  | Playwright end-to-end tests (builds required) |
+| `npm run lint`      | ESLint                                        |
+| `npm run typecheck` | Route type generation + `tsc --noEmit`        |
+| `npm run format`    | Prettier                                      |
 
-There are 20 tests:
+## Deploying
 
-- **Booking rules:** opening and closing times, overlaps, past times, the user's own bookings, deterministic demo availability, peak pricing split by minute, VAT, the 24-hour cancellation window and SAR formatting.
-- **Data and store:** bilingual search and filters, booking and cancelling, the user's taken time ranges, and splitting bookings into upcoming and past.
-- **Translations:** Arabic and English have the same keys and the same `{placeholders}`.
-- **Screens (Expo Router testing library):** filtering the venue list, and the full flow from choosing a day and slot to the stored booking and confirmation screen.
+The app runs on any Node.js host. On Vercel, import the repository and set `SESSION_SECRET`.
+
+> **About the demo database:** without `DATABASE_URL`, each server instance keeps its own in-memory copy of
+> the data, so changes reset when the instance restarts. Set `DATABASE_URL` to share data between
+> instances. To run several instances against one database, replace the in-process pub/sub in
+> `src/server/live.ts` with Postgres `LISTEN/NOTIFY` or Redis.
 
 ## License
 
-[MIT](LICENSE) © Mohsen Hussein
+MIT © Mohsen Hussein
