@@ -1,4 +1,5 @@
-dist
+.next
 node_modules
-.expo
+playwright-report
+test-results
 package-lock.json
