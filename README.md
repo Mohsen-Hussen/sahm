@@ -9,7 +9,7 @@
 **Sahm** (سهم, "arrow") is a real-time analytics dashboard for online stores. One deployment serves many
 stores, every user has a role per store, and new orders stream in live while you watch.
 
-**Live demo:** _coming soon_ · sign in with any demo account below (password `demo1234`).
+**Live demo: [sahm-taupe.vercel.app](https://sahm-taupe.vercel.app)**. Sign in with any demo account below (password `demo1234`).
 
 | Account         | Access                                                |
 | --------------- | ----------------------------------------------------- |
